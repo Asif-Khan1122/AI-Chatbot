@@ -7,26 +7,42 @@ export default function Home() {
   );
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    try {
+      const saved = localStorage.getItem("chat-messages");
+      if (saved) {
+        setMessages(JSON.parse(saved));
+      }
+    } catch (error) {
+      console.error("Failed to load messages:", error);
+    }
+    setIsLoaded(true);
+  }, []);
+
+  useEffect(() => {
+    if (isLoaded) {
+      localStorage.setItem("chat-messages", JSON.stringify(messages));
+    }
+  }, [messages, isLoaded]);
+
+  useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, loading]);
+  }, [messages]);
 
   async function sendMessage() {
     if (!input.trim()) return;
-
     const newMessages = [...messages, { role: "user", content: input }];
     setMessages(newMessages);
     setInput("");
     setLoading(true);
-
     const res = await fetch("/api/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ messages: newMessages }),
     });
-
     const data = await res.json();
     setMessages([...newMessages, { role: "assistant", content: data.reply }]);
     setLoading(false);
@@ -37,148 +53,169 @@ export default function Home() {
       style={{
         display: "flex",
         flexDirection: "column",
-        height: "100vh",
+        height: "100dvh",
         backgroundColor: "#212121",
         color: "white",
         fontFamily: "sans-serif",
       }}
     >
-      {/* Header */}
+      {" "}
       <div
         style={{
-          padding: "16px 24px",
+          padding: "14px 20px",
           borderBottom: "1px solid #333",
-          fontSize: 18,
-          fontWeight: 600,
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          flexShrink: 0,
         }}
       >
-        AI Chatbot
-      </div>
-
-      {/* Messages Area - scrollable */}
-      <div
-        style={{
-          flex: 1,
-          overflowY: "auto",
-          padding: "24px 0",
-        }}
-      >
-        <div style={{ maxWidth: 760, margin: "0 auto", padding: "0 16px" }}>
+        {" "}
+        <span style={{ fontSize: 17, fontWeight: 600 }}>AI Chatbot</span>{" "}
+        <button
+          onClick={() => {
+            setMessages([]);
+            localStorage.removeItem("chat-messages");
+          }}
+          style={{
+            background: "transparent",
+            border: "1px solid #555",
+            color: "#aaa",
+            padding: "5px 12px",
+            borderRadius: 8,
+            cursor: "pointer",
+            fontSize: 12,
+          }}
+        >
+          {" "}
+          New Chat{" "}
+        </button>{" "}
+      </div>{" "}
+      <div style={{ flex: 1, overflowY: "auto", padding: "20px 0" }}>
+        {" "}
+        <div style={{ maxWidth: 760, margin: "0 auto", padding: "0 12px" }}>
+          {" "}
           {messages.length === 0 && (
             <div
               style={{
                 textAlign: "center",
                 color: "#888",
-                marginTop: 120,
-                fontSize: 22,
+                marginTop: 100,
+                fontSize: 20,
                 fontWeight: 600,
               }}
             >
-              How can I help you today?
+              {" "}
+              How can I help you today?{" "}
             </div>
           )}
-
           {messages.map((m, i) => (
             <div
               key={i}
               style={{
                 display: "flex",
                 justifyContent: m.role === "user" ? "flex-end" : "flex-start",
-                marginBottom: 20,
+                marginBottom: 16,
               }}
             >
+              {" "}
               {m.role === "assistant" && (
                 <div
                   style={{
-                    width: 32,
-                    height: 32,
+                    width: 30,
+                    height: 30,
                     borderRadius: "50%",
                     background: "#7c3aed",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    fontSize: 14,
+                    fontSize: 12,
                     fontWeight: 700,
-                    marginRight: 12,
+                    marginRight: 10,
                     flexShrink: 0,
                     marginTop: 4,
                   }}
                 >
-                  AI
+                  {" "}
+                  AI{" "}
                 </div>
-              )}
+              )}{" "}
               <div
                 style={{
-                  maxWidth: "75%",
-                  padding: "12px 16px",
+                  maxWidth: "78%",
+                  padding: "10px 14px",
                   borderRadius:
                     m.role === "user"
                       ? "18px 18px 4px 18px"
                       : "18px 18px 18px 4px",
                   background: m.role === "user" ? "#7c3aed" : "#2f2f2f",
                   color: "white",
-                  fontSize: 15,
+                  fontSize: 14,
                   lineHeight: 1.6,
+                  wordBreak: "break-word",
                 }}
               >
-                {m.content}
-              </div>
+                {" "}
+                {m.content}{" "}
+              </div>{" "}
             </div>
           ))}
-
           {loading && (
             <div
               style={{
                 display: "flex",
                 alignItems: "center",
-                gap: 12,
-                marginBottom: 20,
+                gap: 10,
+                marginBottom: 16,
               }}
             >
+              {" "}
               <div
                 style={{
-                  width: 32,
-                  height: 32,
+                  width: 30,
+                  height: 30,
                   borderRadius: "50%",
                   background: "#7c3aed",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  fontSize: 14,
+                  fontSize: 12,
                   fontWeight: 700,
                   flexShrink: 0,
                 }}
               >
-                AI
-              </div>
-              <div style={{ color: "#888", fontSize: 14 }}>Thinking...</div>
+                {" "}
+                AI{" "}
+              </div>{" "}
+              <div style={{ color: "#888", fontSize: 13 }}>
+                Thinking...
+              </div>{" "}
             </div>
-          )}
-
-          <div ref={bottomRef} />
-        </div>
-      </div>
-
-      {/* Input Area - fixed at bottom */}
+          )}{" "}
+          <div ref={bottomRef} />{" "}
+        </div>{" "}
+      </div>{" "}
       <div
         style={{
-          padding: "16px",
+          padding: "12px",
           borderTop: "1px solid #333",
           backgroundColor: "#212121",
+          flexShrink: 0,
         }}
       >
+        {" "}
         <div
           style={{
             maxWidth: 760,
             margin: "0 auto",
             display: "flex",
-            gap: 10,
             alignItems: "center",
             background: "#2f2f2f",
             borderRadius: 28,
-            padding: "8px 8px 8px 20px",
+            padding: "6px 6px 6px 16px",
           }}
         >
+          {" "}
           <input
             value={input}
             onChange={(e) => setInput(e.target.value)}
@@ -189,17 +226,18 @@ export default function Home() {
               background: "transparent",
               border: "none",
               outline: "none",
-              fontSize: 15,
+              fontSize: 14,
               color: "white",
               padding: "6px 0",
+              minWidth: 0,
             }}
-          />
+          />{" "}
           <button
             onClick={sendMessage}
             disabled={!input.trim() || loading}
             style={{
-              width: 36,
-              height: 36,
+              width: 34,
+              height: 34,
               borderRadius: "50%",
               background: input.trim() && !loading ? "#7c3aed" : "#444",
               border: "none",
@@ -211,9 +249,10 @@ export default function Home() {
               transition: "background 0.2s",
             }}
           >
+            {" "}
             <svg
-              width='16'
-              height='16'
+              width='14'
+              height='14'
               viewBox='0 0 24 24'
               fill='none'
               stroke='white'
@@ -221,12 +260,13 @@ export default function Home() {
               strokeLinecap='round'
               strokeLinejoin='round'
             >
-              <line x1='12' y1='19' x2='12' y2='5' />
-              <polyline points='5,12 12,5 19,12' />
-            </svg>
-          </button>
-        </div>
-      </div>
+              {" "}
+              <line x1='12' y1='19' x2='12' y2='5' />{" "}
+              <polyline points='5,12 12,5 19,12' />{" "}
+            </svg>{" "}
+          </button>{" "}
+        </div>{" "}
+      </div>{" "}
     </div>
   );
 }
